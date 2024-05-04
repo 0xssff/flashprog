@@ -3,6 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build-armv7l:
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -13,7 +14,6 @@ jobs:
           base_image: raspbian_lite:2020-02-13
           copy_artifact_path: flashprog.tar.gz
           image_additional_mb: 1024
-          if: always() && true
           commands: |
             sudo apt-get update
             sudo apt-get install -y build-essential pkg-config make libusb-dev libusb-1.0-0-dev libjaylink-dev libpci-dev zlib1g-dev libgpiod-dev git-core cmake doxygen libconfuse-dev swig python-dev-is-python3 libboost-all-dev
