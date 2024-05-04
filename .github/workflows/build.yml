@@ -1,0 +1,42 @@
+name: Build Binaries
+on: [push, pull_request]
+
+jobs:
+  build-armv7l:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: pguyot/arm-runner-action@v2
+        id: build_image
+        with:
+          cpu: cortex-a7
+          base_image: raspbian_lite:2020-02-13
+          copy_artifact_path: flashprog.tar.gz
+          image_additional_mb: 1024
+          commands: |
+            sudo apt-get install -y build-essential pkg-config make libusb-dev libusb-1.0-0-dev libjaylink-dev libpci-dev zlib1g-dev libgpiod-dev git-core cmake doxygen libconfuse-dev swig python-dev-is-python3 libboost-all-dev
+            git clone git://developer.intra2net.com/libftdi
+            cd libftdi
+            mkdir build
+            cd build
+            cmake  -DCMAKE_INSTALL_PREFIX="/usr" ../
+            make
+            sudo make install
+            cd ../..
+            CONFIG_STATIC=no make -j4 V=1
+            mkdir flashprog_installed
+            CONFIG_STATIC=no make -j4 install DESTDIR=$(pwd)/flashprog_installed/
+            ls -R flashprog_installed
+            file flashprog_installed/usr/local/sbin/*
+            ldd flashprog_installed/usr/local/sbin/*
+            cp /lib/arm-linux-gnueabihf/libpci.so.3 flashprog_installed/usr/local/sbin/.
+            cp /lib/arm-linux-gnueabihf/libusb-1.0.so.0 flashprog_installed/usr/local/sbin/.
+            cp /lib/arm-linux-gnueabihf/libftdi1.so.2 flashprog_installed/usr/local/sbin/.
+            cp /lib/arm-linux-gnueabihf/libgpiod.so.2 flashprog_installed/usr/local/sbin/.
+            cp /lib/arm-linux-gnueabihf/libjaylink.so.0 flashprog_installed/usr/local/sbin/.
+            cp /lib/arm-linux-gnueabihf/libudev.so.1 flashprog_installed/usr/local/sbin/.
+            tar -cvf flashprog.tar.gz -C flashprog_installed .
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Linux ARMv7l
+          path: flashprog.tar.gz
